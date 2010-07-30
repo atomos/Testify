@@ -22,6 +22,7 @@ import sys
 import traceback
 import logging
 from IPython import ultraTB
+from util import clog
 
 # from test_case import TestCase
 
@@ -33,12 +34,15 @@ VERBOSITY_SILENT    = 0  # Don't say anything, just exit with a status code
 VERBOSITY_NORMAL    = 1  # Output dots for each test method run
 VERBOSITY_VERBOSE   = 2  # Output method names and timing information
 
+SCRIBE_STREAM = "testify"
+
 class TestLoggerBase(object):
     traceback_formater = staticmethod(traceback.format_exception)
 
-    def __init__(self, verbosity, stream=sys.stdout):
+    def __init__(self, verbosity, stream=sys.stdout, publish_to_scribe=False):
         self.verbosity = verbosity
         self.stream = stream
+	self.publish_to_scribe=publish_to_scribe
 
     # These methods should be implemented by a TestLoggerBase subclass
     def report_test_name(self, test_name): raise NotImplementedError
@@ -127,6 +131,12 @@ class TextTestLogger(TestLoggerBase):
             end_color = chr(0033) + '[m'
             return start_color + message + end_color
 
+    def _log_unexpected_failure(self, method_name, exc_info):
+        formatted_method = self._format_test_method_name(method_name)
+        _log.error("error (unexpected): %s", formatted_method, exc_info=exc_info)
+	if self.publish_to_scribe:
+        	clog.log_line(SCRIBE_STREAM, "TEST FAILURE: %s" % formatted_method)
+
     def report_test_name(self, test_method):
         _log.info("running: %s", self._format_test_method_name(test_method))
         if self.verbosity >= VERBOSITY_VERBOSE:
@@ -157,7 +167,7 @@ class TextTestLogger(TestLoggerBase):
                     else:
                         self.writeln("%s in %s" % (self._colorize("FAIL (EXPECTED)", self.RED), result.normalized_run_time()))
                 else:
-                    _log.error("fail: %s", self._format_test_method_name(result.test_method), exc_info=result.exception_info)
+                    self._log_unexpected_failure(result.test_method, exc_info=result.exception_info)
                     if self.verbosity == VERBOSITY_NORMAL:
                         self.write(self._colorize('F', self.RED))
                     else:
@@ -171,7 +181,7 @@ class TextTestLogger(TestLoggerBase):
                     else:
                         self.writeln("%s in %s" % (self._colorize("ERROR (EXPECTED)", self.RED), result.normalized_run_time()))
                 else:
-                    _log.error("error: %s", self._format_test_method_name(result.test_method), exc_info=result.exception_info)
+                    self._log_unexpected_failure(result.test_method, exc_info=result.exception_info)
                     if self.verbosity == VERBOSITY_NORMAL:
                         self.write(self._colorize('E', self.RED))
                     else:

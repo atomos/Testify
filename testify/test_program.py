@@ -75,6 +75,8 @@ def parse_test_runner_command_line_args(args):
     parser.add_option("--log-file", action="store", dest="log_file", type="string", default=None)
     parser.add_option("--log-level", action="store", dest="log_level", type="string", default="INFO")
 
+    parser.add_option("--publish-to-scribe", action="store_true", dest="publish_to_scribe", default=False)
+
     (options, args) = parser.parse_args(args)
     if len(args) < 1:
         parser.error("Test path required")
@@ -99,7 +101,8 @@ def parse_test_runner_command_line_args(args):
         'profile': options.profile,
         'module_method_overrides': module_method_overrides,
         'summary_mode': options.summary_mode,
-        'test_logger_class': (TextTestLogger if not options.disable_color else ColorlessTextTestLogger)
+        'test_logger_class': (TextTestLogger if not options.disable_color else ColorlessTextTestLogger),
+	'publish_to_scribe': options.publish_to_scribe
         }
 
     return runner_action, test_path, test_runner_args, options

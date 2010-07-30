@@ -48,6 +48,7 @@ class TestRunner(object):
         profile=False,
         summary_mode=False,
         test_logger_class=TextTestLogger,
+	publish_to_scribe=False,
         module_method_overrides={}):
         """After instantiating a TestRunner, call add_test_case() to add some tests, and run() to run them."""
         self.verbosity = verbosity
@@ -57,7 +58,7 @@ class TestRunner(object):
 
         self.coverage = coverage
         self.profile = profile
-        self.logger = test_logger_class(self.verbosity)
+        self.logger = test_logger_class(self.verbosity, publish_to_scribe=publish_to_scribe)
         self.summary_mode = summary_mode
 
         self.module_method_overrides = module_method_overrides
